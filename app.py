@@ -1,51 +1,103 @@
 import streamlit as st
 import requests
+import os
+from dotenv import load_dotenv
+import pandas as pd
 
-# ==========================
-# Config
-# ==========================
-API_URL = "https://smart-business-api.onrender.com"  # ضع رابط Render الجديد هنا
+load_dotenv()
+API_URL = os.getenv("API_URL")
 
-# ==========================
-# Login
-# ==========================
-st.title("🔥 Smart Business SaaS Dashboard")
+st.set_page_config(page_title="Smart Business SaaS", layout="wide")
+st.title("Smart Business SaaS Dashboard 🔥")
 
-if "token" not in st.session_state:
-    st.session_state.token = None
+# =========================
+# Companies
+# =========================
+st.header("Companies")
 
-def login():
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        res = requests.post(f"{API_URL}/token", data={"username": email, "password": password})
-        if res.status_code == 200:
-            st.session_state.token = res.json()["access_token"]
-            st.success("Logged in successfully!")
-        else:
-            st.error("Invalid credentials")
+if st.button("Load Companies"):
+    res = requests.get(f"{API_URL}/company/")
+    data = res.json()
+    if data:
+        df = pd.DataFrame(data)
+        st.dataframe(df)
+    else:
+        st.info("No companies found")
 
-if not st.session_state.token:
-    login()
-else:
-    st.success("✅ Logged in")
-    headers = {"Authorization": f"Bearer {st.session_state.token}"}
+st.subheader("Add Company")
+company_name = st.text_input("Company Name")
+if st.button("Create Company"):
+    if company_name:
+        res = requests.post(
+            f"{API_URL}/company/",
+            params={"name": company_name}
+        )
+        st.success(res.json())
 
-    # ==========================
-    # Dashboard Sections
-    # ==========================
-    st.subheader("Companies")
-    companies = requests.get(f"{API_URL}/company/", headers=headers)
-    st.write(companies.json() if companies.status_code==200 else "No companies found")
+# =========================
+# Employees
+# =========================
+st.header("Employees")
 
-    st.subheader("Employees Compensation")
-    employee_id = st.number_input("Employee ID", min_value=1)
-    if st.button("Calculate Compensation"):
-        res = requests.get(f"{API_URL}/compensation/{employee_id}", headers=headers)
-        st.write(res.json() if res.status_code==200 else "Error calculating")
+if st.button("Load Employees"):
+    res = requests.get(f"{API_URL}/employee/")
+    data = res.json()
+    if data:
+        df = pd.DataFrame(data)
+        st.dataframe(df)
+    else:
+        st.info("No employees found")
 
-    st.subheader("Sales Analytics")
-    company_id = st.number_input("Company ID for Sales", min_value=1)
-    if st.button("Get Sales"):
-        res = requests.get(f"{API_URL}/sales/{company_id}", headers=headers)
-        st.write(res.json() if res.status_code==200 else "No sales found")
+st.subheader("Add Employee")
+emp_name = st.text_input("Employee Name")
+emp_company = st.number_input("Company ID", min_value=1)
+emp_salary = st.number_input("Salary", min_value=0.0)
+
+if st.button("Create Employee"):
+    res = requests.post(
+        f"{API_URL}/employee/",
+        params={
+            "name": emp_name,
+            "company_id": emp_company,
+            "salary": emp_salary
+        }
+    )
+    st.success(res.json())
+
+# =========================
+# Sales
+# =========================
+st.header("Sales")
+
+if st.button("Load Sales"):
+    res = requests.get(f"{API_URL}/sale/")
+    data = res.json()
+    if data:
+        df = pd.DataFrame(data)
+        st.dataframe(df)
+    else:
+        st.info("No sales found")
+
+st.subheader("Add Sale")
+sale_company = st.number_input("Company ID for Sale", min_value=1)
+sale_amount = st.number_input("Amount", min_value=0.0)
+
+if st.button("Create Sale"):
+    res = requests.post(
+        f"{API_URL}/sale/",
+        params={
+            "company_id": sale_company,
+            "amount": sale_amount
+        }
+    )
+    st.success(res.json())
+
+# =========================
+# Smart Compensation
+# =========================
+st.header("Compensation Engine 💰")
+comp_id = st.number_input("Employee ID", min_value=1)
+
+if st.button("Calculate Bonus"):
+    res = requests.get(f"{API_URL}/compensation/{comp_id}")
+    st.json(res.json())
