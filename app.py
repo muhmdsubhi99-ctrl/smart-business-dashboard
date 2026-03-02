@@ -1,6 +1,16 @@
 import streamlit as st
 import requests
 import os
+from dotenv import load_dotenv  # هذه لتحميل المتغيرات من ملف .env
+
+# تحميل المتغيرات من .env
+load_dotenv()
+
+# قراءة الرابط من المتغير BACKEND_URL
+BACKEND_URL = os.getenv("BACKEND_URL", "https://smart-business-backend-j9ki.onrender.com")
+import streamlit as st
+import requests
+import os
 from dotenv import load_dotenv
 import pandas as pd
 
